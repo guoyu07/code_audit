@@ -18,3 +18,5 @@ ThinkPHP5.0.10框架exp表达式慎重使用不然可导致sql注入
 ThinkPHP5.0.10框架filterExp函数过滤不严格导致sql注入
 
 DedeCMS-V5.7-UTF8-SPgetshell鸡鸡鸡鸡鸡鸡鸡助漏洞
+
+Typecho-1.0-14.10.10版 install.php反序列化漏洞分析
